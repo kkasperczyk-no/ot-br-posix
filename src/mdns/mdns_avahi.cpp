@@ -593,11 +593,12 @@ void PublisherAvahi::Process(const MainloopContext &aMainloop)
     mPoller.Process(aMainloop);
 }
 
-otbrError PublisherAvahi::PublishService(const char *   aHostName,
-                                         uint16_t       aPort,
-                                         const char *   aName,
-                                         const char *   aType,
-                                         const TxtList &aTxtList)
+otbrError PublisherAvahi::PublishService(const char *              aHostName,
+                                         uint16_t                  aPort,
+                                         const char *              aName,
+                                         const char *              aType,
+                                         std::vector<std::string> &aSubtypes,
+                                         const TxtList &           aTxtList)
 {
     otbrError          error        = OTBR_ERROR_NONE;
     int                avahiError   = 0;
@@ -673,6 +674,16 @@ otbrError PublisherAvahi::PublishService(const char *   aHostName,
         avahi_entry_group_add_service_strlst(serviceIt->mGroup, AVAHI_IF_UNSPEC, mProtocol, AvahiPublishFlags{}, aName,
                                              aType, mDomain, aHostName, aPort, last);
     SuccessOrExit(avahiError);
+
+    // Iterate through the subtypes list and add it for the existing group.
+    for (int i = 0; i < static_cast<int>(aSubtypes.size()); i++)
+    {
+        // Full subtype name is _name._sub.aType
+        avahiError =
+            avahi_entry_group_add_service_subtype(serviceIt->mGroup, AVAHI_IF_UNSPEC, mProtocol, AvahiPublishFlags{},
+                                                  aName, aType, mDomain, (aSubtypes.at(i) + "._sub." + aType).c_str());
+        SuccessOrExit(avahiError);
+    }
 
     otbrLogInfo("Commit service %s.%s", aName, aType);
     avahiError = avahi_entry_group_commit(serviceIt->mGroup);

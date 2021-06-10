@@ -191,12 +191,14 @@ void AdvertisingProxy::AdvertisingHandler(otSrpServerServiceUpdateId aId,
     service = nullptr;
     while ((service = otSrpServerHostGetNextService(aHost, service)) != nullptr)
     {
-        const char *fullServiceName = otSrpServerServiceGetFullName(service);
-        std::string serviceName;
-        std::string serviceType;
-        std::string serviceDomain;
+        const char *             fullServiceName = otSrpServerServiceGetFullName(service);
+        std::string              serviceName;
+        std::string              serviceType;
+        std::vector<std::string> serviceSubtypes;
+        std::string              serviceDomain;
 
-        SuccessOrExit(error = SplitFullServiceInstanceName(fullServiceName, serviceName, serviceType, serviceDomain));
+        SuccessOrExit(error = SplitFullServiceInstanceName(fullServiceName, serviceName, serviceType, serviceSubtypes,
+                                                           serviceDomain));
 
         update->mServiceNames.emplace_back(serviceName, serviceType);
 
@@ -206,7 +208,8 @@ void AdvertisingProxy::AdvertisingHandler(otSrpServerServiceUpdateId aId,
 
             otbrLogInfo("Publish SRP service: %s", fullServiceName);
             SuccessOrExit(error = mPublisher.PublishService(hostName.c_str(), otSrpServerServiceGetPort(service),
-                                                            serviceName.c_str(), serviceType.c_str(), txtList));
+                                                            serviceName.c_str(), serviceType.c_str(), serviceSubtypes,
+                                                            txtList));
         }
         else
         {

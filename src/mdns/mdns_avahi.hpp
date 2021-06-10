@@ -216,11 +216,12 @@ public:
      * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the service.
      *
      */
-    otbrError PublishService(const char *   aHostName,
-                             uint16_t       aPort,
-                             const char *   aName,
-                             const char *   aType,
-                             const TxtList &aTxtList) override;
+    otbrError PublishService(const char *              aHostName,
+                             uint16_t                  aPort,
+                             const char *              aName,
+                             const char *              aType,
+                             std::vector<std::string> &aSubtypes,
+                             const TxtList &           aTxtList) override;
 
     /**
      * This method un-publishes a service.

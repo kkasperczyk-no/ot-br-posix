@@ -228,6 +228,7 @@ void BorderAgent::PublishMeshCopService(void)
     const otExtendedPanId *  extPanId    = otThreadGetExtendedPanId(instance);
     const otExtAddress *     extAddr     = otLinkGetExtendedAddress(instance);
     const char *             networkName = otThreadGetNetworkName(instance);
+    std::vector<std::string> subtypes    = {};
     Mdns::Publisher::TxtList txtList{{"rv", "1"}};
 
     otbrLogInfo("Publish meshcop service %s.%s.local.", networkName, kBorderAgentServiceType);
@@ -297,7 +298,7 @@ void BorderAgent::PublishMeshCopService(void)
 #endif
 
     mPublisher->PublishService(/* aHostName */ nullptr, otBorderAgentGetUdpPort(instance), networkName,
-                               kBorderAgentServiceType, txtList);
+                               kBorderAgentServiceType, subtypes, txtList);
 }
 
 void BorderAgent::UnpublishMeshCopService(void)

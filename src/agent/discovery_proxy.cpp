@@ -177,13 +177,14 @@ void DiscoveryProxy::OnServiceDiscovered(const std::string &                    
 
     while ((query = otDnssdGetNextQuery(mNcp.GetInstance(), query)) != nullptr)
     {
-        std::string      instanceName;
-        std::string      serviceName;
-        std::string      hostName;
-        std::string      domain;
-        char             queryName[OT_DNS_MAX_NAME_SIZE];
-        otDnssdQueryType type = otDnssdGetQueryTypeAndName(query, &queryName);
-        otbrError        splitError;
+        std::string              instanceName;
+        std::string              serviceName;
+        std::vector<std::string> serviceSubtypes;
+        std::string              hostName;
+        std::string              domain;
+        char                     queryName[OT_DNS_MAX_NAME_SIZE];
+        otDnssdQueryType         type = otDnssdGetQueryTypeAndName(query, &queryName);
+        otbrError                splitError;
 
         switch (type)
         {
@@ -192,7 +193,7 @@ void DiscoveryProxy::OnServiceDiscovered(const std::string &                    
             assert(splitError == OTBR_ERROR_NONE);
             break;
         case OT_DNSSD_QUERY_TYPE_RESOLVE:
-            splitError = SplitFullServiceInstanceName(queryName, instanceName, serviceName, domain);
+            splitError = SplitFullServiceInstanceName(queryName, instanceName, serviceName, serviceSubtypes, domain);
             assert(splitError == OTBR_ERROR_NONE);
             break;
         default:

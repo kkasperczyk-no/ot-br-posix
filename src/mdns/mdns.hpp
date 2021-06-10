@@ -259,11 +259,12 @@ public:
      * @retval  OTBR_ERROR_ERRNO    Failed to publish or update the service.
      *
      */
-    virtual otbrError PublishService(const char *   aHostName,
-                                     uint16_t       aPort,
-                                     const char *   aName,
-                                     const char *   aType,
-                                     const TxtList &aTxtList) = 0;
+    virtual otbrError PublishService(const char *              aHostName,
+                                     uint16_t                  aPort,
+                                     const char *              aName,
+                                     const char *              aType,
+                                     std::vector<std::string> &aSubtypes,
+                                     const TxtList &           aTxtList) = 0;
 
     /**
      * This method un-publishes a service.

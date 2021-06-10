@@ -46,8 +46,9 @@ struct DnsNameInfo
 {
     std::string mInstanceName; ///< Instance name, or empty if the DNS name is not a service instance.
     std::string mServiceName;  ///< Service name, or empty if the DNS name is not a service or service instance.
-    std::string mHostName;     ///< Host name, or empty if the DNS name is not a host name.
-    std::string mDomain;       ///< Domain name.
+    std::vector<std::string> mSubtypes;
+    std::string              mHostName; ///< Host name, or empty if the DNS name is not a host name.
+    std::string              mDomain;   ///< Domain name.
 
     /**
      * This method returns if the DNS name is a service instance.
@@ -86,6 +87,8 @@ struct DnsNameInfo
  */
 DnsNameInfo SplitFullDnsName(const std::string &aName);
 
+void SplitSubtypes(std::string aSubtypes, std::vector<std::string> &aSubtypesList);
+
 /**
  * This function splits a full service name into components.
  *
@@ -111,10 +114,11 @@ otbrError SplitFullServiceName(const std::string &aFullName, std::string &aType,
  * @retval OTBR_ERROR_INVALID_ARGS  If the full service instance name is not valid.
  *
  */
-otbrError SplitFullServiceInstanceName(const std::string &aFullName,
-                                       std::string &      aInstanceName,
-                                       std::string &      aType,
-                                       std::string &      aDomain);
+otbrError SplitFullServiceInstanceName(const std::string &       aFullName,
+                                       std::string &             aInstanceName,
+                                       std::string &             aType,
+                                       std::vector<std::string> &aSubtypes,
+                                       std::string &             aDomain);
 
 /**
  * This function splits a full host name into components.

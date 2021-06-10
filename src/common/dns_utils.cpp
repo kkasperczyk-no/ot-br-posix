@@ -28,6 +28,7 @@
 
 #include "common/dns_utils.hpp"
 
+#include <algorithm>
 #include <assert.h>
 
 #include "common/code_utils.hpp"
@@ -48,11 +49,11 @@ DnsNameInfo SplitFullDnsName(const std::string &aName)
         fullName += '.';
     }
 
-    transportPos = fullName.rfind("._udp.");
+    transportPos = fullName.rfind("._udp");
 
     if (transportPos == std::string::npos)
     {
-        transportPos = fullName.rfind("._tcp.");
+        transportPos = fullName.rfind("._tcp");
     }
 
     if (transportPos == std::string::npos)
@@ -71,7 +72,17 @@ DnsNameInfo SplitFullDnsName(const std::string &aName)
         // service or service instance
         size_t dotPos = transportPos > 0 ? fullName.find_last_of('.', transportPos - 1) : std::string::npos;
 
-        nameInfo.mDomain = fullName.substr(transportPos + 6); // 6 is the length of "._tcp." or "._udp."
+        size_t domainPos = fullName.find_first_of('.', transportPos + 1);
+
+        nameInfo.mDomain = fullName.substr(domainPos + 1);
+
+        // subtypes beginning (if any present)
+        size_t commaPos = fullName.find_first_of(",");
+
+        if (commaPos != std::string::npos)
+        {
+            SplitSubtypes(fullName.substr(commaPos, domainPos - commaPos), nameInfo.mSubtypes);
+        }
 
         if (dotPos == std::string::npos)
         {
@@ -94,10 +105,32 @@ DnsNameInfo SplitFullDnsName(const std::string &aName)
     return nameInfo;
 }
 
-otbrError SplitFullServiceInstanceName(const std::string &aFullName,
-                                       std::string &      aInstanceName,
-                                       std::string &      aType,
-                                       std::string &      aDomain)
+void SplitSubtypes(std::string aSubtypes, std::vector<std::string> &aSubtypesList)
+{
+    // TODO: add some max sub types number and verify it?
+    size_t prevCommaPos = aSubtypes.find_first_of(',');
+    for (int subtypesNumber = std::count(aSubtypes.begin(), aSubtypes.end(), ','); subtypesNumber > 0; subtypesNumber--)
+    {
+        size_t nextCommaPos = aSubtypes.find_first_of(',', prevCommaPos + 1);
+        if (nextCommaPos == std::string::npos)
+        {
+            // This is the last subtype and it ends at the end of whole subtypes string.
+            aSubtypesList.push_back(aSubtypes.substr(prevCommaPos + 1));
+        }
+        else
+        {
+            // The current subtype range ends on the next comma.
+            aSubtypesList.push_back(aSubtypes.substr(prevCommaPos + 1, nextCommaPos - prevCommaPos - 1));
+            prevCommaPos = nextCommaPos;
+        }
+    }
+}
+
+otbrError SplitFullServiceInstanceName(const std::string &       aFullName,
+                                       std::string &             aInstanceName,
+                                       std::string &             aType,
+                                       std::vector<std::string> &aSubtypes,
+                                       std::string &             aDomain)
 {
     otbrError   error    = OTBR_ERROR_NONE;
     DnsNameInfo nameInfo = SplitFullDnsName(aFullName);
@@ -106,6 +139,7 @@ otbrError SplitFullServiceInstanceName(const std::string &aFullName,
 
     aInstanceName = std::move(nameInfo.mInstanceName);
     aType         = std::move(nameInfo.mServiceName);
+    aSubtypes     = std::move(nameInfo.mSubtypes);
     aDomain       = std::move(nameInfo.mDomain);
 
 exit:

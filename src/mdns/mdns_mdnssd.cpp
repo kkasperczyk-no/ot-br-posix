@@ -478,11 +478,12 @@ void PublisherMDnsSd::RecordService(const char *aName, const char *aType, DNSSer
     }
 }
 
-otbrError PublisherMDnsSd::PublishService(const char *   aHostName,
-                                          uint16_t       aPort,
-                                          const char *   aName,
-                                          const char *   aType,
-                                          const TxtList &aTxtList)
+otbrError PublisherMDnsSd::PublishService(const char *              aHostName,
+                                          uint16_t                  aPort,
+                                          const char *              aName,
+                                          const char *              aType,
+                                          std::vector<std::string> &aSubtypes,
+                                          const TxtList &           aTxtList)
 {
     otbrError       ret   = OTBR_ERROR_NONE;
     int             error = 0;
@@ -517,9 +518,17 @@ otbrError PublisherMDnsSd::PublishService(const char *   aHostName,
     }
     else
     {
-        SuccessOrExit(error = DNSServiceRegister(&serviceRef, /* flags */ 0, kDNSServiceInterfaceIndexAny, aName, aType,
-                                                 mDomain, (aHostName != nullptr) ? fullHostName : nullptr, htons(aPort),
-                                                 txtLength, txt, HandleServiceRegisterResult, this));
+        std::string regtype = aType;
+        // In case there are any subtypes add concatenate them with aType following the pattern:
+        // aType,_subtype1,_subtype2 etc.
+        for (int i = 0; i < static_cast<int>(aSubtypes.size()); i++)
+        {
+            regtype += "," + aSubtypes.at(i);
+        }
+        SuccessOrExit(error =
+                          DNSServiceRegister(&serviceRef, /* flags */ 0, kDNSServiceInterfaceIndexAny, aName,
+                                             regtype.c_str(), mDomain, (aHostName != nullptr) ? fullHostName : nullptr,
+                                             htons(aPort), txtLength, txt, HandleServiceRegisterResult, this));
         RecordService(aName, aType, serviceRef);
     }
 
@@ -960,15 +969,16 @@ void PublisherMDnsSd::ServiceSubscription::HandleResolveResult(DNSServiceRef    
 {
     OTBR_UNUSED_VARIABLE(aServiceRef);
 
-    std::string instanceName, type, domain;
-    otbrError   error = OTBR_ERROR_NONE;
+    std::string              instanceName, type, domain;
+    std::vector<std::string> subtypes;
+    otbrError                error = OTBR_ERROR_NONE;
 
     otbrLogInfo("DNSServiceResolve reply: %s host %s:%d, TXT=%dB inf %u, flags=%u", aFullName, aHostTarget, aPort,
                 aTxtLen, aInterfaceIndex, aFlags);
 
     VerifyOrExit(aErrorCode == kDNSServiceErr_NoError);
 
-    SuccessOrExit(error = SplitFullServiceInstanceName(aFullName, instanceName, type, domain));
+    SuccessOrExit(error = SplitFullServiceInstanceName(aFullName, instanceName, type, subtypes, domain));
 
     mInstanceInfo.mName     = instanceName;
     mInstanceInfo.mHostName = aHostTarget;
